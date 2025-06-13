@@ -3,9 +3,16 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
 class Ingredient(models.Model):
-    name = models.CharField(max_length=200, verbose_name="Название")
-    measurement_unit = models.CharField(max_length=50, verbose_name="Единица измерения")
+    name = models.CharField(
+        max_length=200,
+        verbose_name="Название"
+    )
+    measurement_unit = models.CharField(
+        max_length=50,
+        verbose_name="Единица измерения"
+    )
 
     class Meta:
         verbose_name = "Ингредиент"
@@ -17,9 +24,21 @@ class Ingredient(models.Model):
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="Название")
-    color = models.CharField(max_length=7, unique=True, verbose_name="Цвет (HEX)")
-    slug = models.SlugField(max_length=100, unique=True, verbose_name="Слаг")
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="Название"
+    )
+    color = models.CharField(
+        max_length=7,
+        unique=True,
+        verbose_name="Цвет (HEX)"
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        verbose_name="Слаг"
+    )
 
     class Meta:
         verbose_name = "Тег"
@@ -37,17 +56,31 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name="Автор"
     )
-    name = models.CharField(max_length=200, verbose_name="Название")
-    image = models.ImageField(upload_to='recipes/images/', verbose_name="Картинка")
-    text = models.TextField(verbose_name="Описание")
+    name = models.CharField(
+        max_length=200,
+        verbose_name="Название"
+    )
+    image = models.ImageField(
+        upload_to='recipes/images/',
+        verbose_name="Картинка"
+    )
+    text = models.TextField(
+        verbose_name="Описание"
+    )
     ingredients = models.ManyToManyField(
         Ingredient,
         through='RecipeIngredient',
         related_name='recipes',
         verbose_name="Ингредиенты"
     )
-    tags = models.ManyToManyField(Tag, related_name='recipes', verbose_name="Теги")
-    cooking_time = models.PositiveIntegerField(verbose_name="Время приготовления (мин)")
+    tags = models.ManyToManyField(
+        Tag,
+        related_name='recipes',
+        verbose_name="Теги"
+    )
+    cooking_time = models.PositiveIntegerField(
+        verbose_name="Время приготовления (мин)"
+    )
 
     class Meta:
         verbose_name = "Рецепт"
@@ -59,16 +92,30 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    amount = models.PositiveIntegerField(verbose_name="Количество")
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE
+    )
+    ingredient = models.ForeignKey(
+        Ingredient,
+        on_delete=models.CASCADE
+    )
+    amount = models.PositiveIntegerField(
+        verbose_name="Количество"
+    )
 
     class Meta:
         verbose_name = "Ингредиент в рецепте"
         verbose_name_plural = "Ингредиенты в рецепте"
         constraints = [
-            models.UniqueConstraint(fields=['recipe', 'ingredient'], name='unique_recipe_ingredient')
+            models.UniqueConstraint(
+                fields=['recipe', 'ingredient'],
+                name='unique_recipe_ingredient'
+            )
         ]
 
     def __str__(self):
-        return f"{self.ingredient.name} — {self.amount} ({self.ingredient.measurement_unit})"
+        return (
+            f"{self.ingredient.name} — {self.amount} "
+            f"({self.ingredient.measurement_unit})"
+        )
