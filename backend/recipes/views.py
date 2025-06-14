@@ -2,6 +2,7 @@ from rest_framework import viewsets, filters, status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 from rest_framework import mixins
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
@@ -114,6 +115,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response({'errors': 'Рецепт не в корзине!'},
                         status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticatedOrReadOnly], url_path='get-link')
+    def get_link(self, request, pk=None):
+        recipe = self.get_object()
+        url = request.build_absolute_uri(reverse('recipe-detail', args=[recipe.pk]))
+        return Response({'short-link': url})
 
 
 class FavoriteViewSet(mixins.CreateModelMixin,
