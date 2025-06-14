@@ -1,11 +1,41 @@
-from djoser.serializers import UserCreateSerializer, UserSerializer
 from django.contrib.auth import get_user_model
+from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 User = get_user_model()
 
 
-class CustomUserCreateSerializer(UserCreateSerializer):
-    class Meta(UserCreateSerializer.Meta):
+class CustomUserCreateSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+    username = serializers.RegexField(
+        regex=r'^[\w.@+-]+\Z',
+        max_length=150,
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all())],
+        error_messages={
+            'invalid': (
+                'Введите правильный username. '
+                'Разрешены буквы, цифры и символы @/./+/-/_'
+            )
+        }
+    )
+    first_name = serializers.CharField(
+        required=True,
+        max_length=150
+    )
+    last_name = serializers.CharField(
+        required=True,
+        max_length=150
+    )
+    password = serializers.CharField(
+        write_only=True,
+        required=True
+    )
+
+    class Meta:
         model = User
         fields = (
             'id',
@@ -15,15 +45,14 @@ class CustomUserCreateSerializer(UserCreateSerializer):
             'last_name',
             'password'
         )
-        extra_kwargs = {
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            'email': {'required': True}
-        }
+
+    def create(self, validated_data):
+        # Метод create_user автоматически хеширует пароль
+        return User.objects.create_user(**validated_data)
 
 
-class CustomUserSerializer(UserSerializer):
-    class Meta(UserSerializer.Meta):
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
         model = User
         fields = (
             'id',
@@ -32,3 +61,4 @@ class CustomUserSerializer(UserSerializer):
             'first_name',
             'last_name'
         )
+        read_only_fields = fields

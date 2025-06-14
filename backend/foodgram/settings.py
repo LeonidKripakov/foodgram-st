@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_filters'
+    'django_filters',
     'djoser',
     'rest_framework',
     'rest_framework.authtoken',
@@ -124,8 +124,8 @@ REST_FRAMEWORK = {
 
 
 AUTHENTICATION_BACKENDS = [
-    'users.models.EmailOrUsernameModelBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'users.backends.EmailOrUsernameModelBackend',
 ]
 
 DJOSER = {

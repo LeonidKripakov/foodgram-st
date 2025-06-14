@@ -1,19 +1,16 @@
-from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth import get_user_model
+from django.conf import settings
+from django.db import models
 
-User = get_user_model()
+User = settings.AUTH_USER_MODEL
 
 
-class EmailOrUsernameModelBackend(ModelBackend):
-    def authenticate(self, request, username=None, password=None, **kwargs):
-        if username is None:
-            username = kwargs.get('email')
+class Subscription(models.Model):
 
-        user = User.objects.filter(username=username).first()
-        if user and user.check_password(password):
-            return user
+    user = models.ForeignKey(
+        User, related_name='subscriptions', on_delete=models.CASCADE)
 
-        user = User.objects.filter(email=username).first()
-        if user and user.check_password(password):
-            return user
-        return None
+    author = models.ForeignKey(
+        User, related_name='subscribers', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'author')

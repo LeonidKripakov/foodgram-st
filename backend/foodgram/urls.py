@@ -7,17 +7,15 @@ from recipes.views import (
     RecipeViewSet,
     TagViewSet
 )
-from users.views import UserViewSet
 
 router = DefaultRouter()
-router.register(r'users', UserViewSet, basename='user')
 router.register(r'recipes', RecipeViewSet, basename='recipe')
 router.register(r'ingredients', IngredientViewSet, basename='ingredient')
 router.register(r'tags', TagViewSet, basename='tag')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('djoser.urls')),             
+    path('api/auth/', include('djoser.urls.authtoken')), 
     path('api/', include(router.urls)),
-    path('api/', include('djoser.urls')),
-    path('api/auth/', include('djoser.urls.authtoken')),
 ]
