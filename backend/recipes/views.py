@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from django.http import HttpResponse
 
 from .models import Ingredient, Tag, Recipe, Favorite, ShoppingCart
+from .filters import RecipeFilter
 from .serializers import (
     IngredientSerializer,
     TagSerializer,
@@ -32,7 +33,8 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = RecipeFilter
     search_fields = ['name', 'author__username']
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['tags', 'author']
