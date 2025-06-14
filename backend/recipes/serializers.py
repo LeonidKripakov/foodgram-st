@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from .fields import Base64ImageField
 
 from .models import (
     Ingredient,
@@ -65,6 +66,7 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
     ingredients = RecipeIngredientWriteSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
