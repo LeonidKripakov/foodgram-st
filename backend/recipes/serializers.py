@@ -116,6 +116,50 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+    def validate(self, data):
+        ingredients = data.get('ingredients')
+        if not ingredients:
+            raise serializers.ValidationError(
+                {'ingredients': 'Нужно указать хотя бы один ингредиент.'}
+            )
+        ids = set()
+        for ing in ingredients:
+            if ing['amount'] < 1:
+                raise serializers.ValidationError(
+                    {'amount': 'Количество ингредиента должно быть ≥ 1.'}
+                )
+            pk = ing['ingredient'].pk
+            if pk in ids:
+                raise serializers.ValidationError(
+                    'Ингредиенты не должны повторяться.'
+                )
+            ids.add(pk)
+
+        tags = data.get('tags')
+        if not tags:
+            raise serializers.ValidationError(
+                {'tags': 'Нужно указать хотя бы один тег.'}
+            )
+
+        if not data.get('name', '').strip():
+            raise serializers.ValidationError(
+                {'name': 'Название не может быть пустым.'}
+            )
+        if not data.get('text', '').strip():
+            raise serializers.ValidationError(
+                {'text': 'Описание не может быть пустым.'}
+            )
+        if not data.get('image'):
+            raise serializers.ValidationError(
+                {'image': 'Картинка обязательна.'}
+            )
+        if data.get('cooking_time', 0) < 1:
+            raise serializers.ValidationError(
+                {'cooking_time': 'Время приготовления должно быть ≥ 1 мин.'}
+            )
+
+        return data
+
 
 class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
