@@ -3,13 +3,14 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import mixins
 
-from .models import Ingredient, Tag, Recipe, Favorite
+from .models import Ingredient, Tag, Recipe, Favorite, ShoppingCart
 from .serializers import (
     IngredientSerializer,
     TagSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
-    FavoriteSerializer
+    FavoriteSerializer,
+    ShoppingCartSerializer
 )
 
 
@@ -75,6 +76,19 @@ class FavoriteViewSet(mixins.CreateModelMixin,
 
     def get_queryset(self):
         return Favorite.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class ShoppingCartViewSet(mixins.CreateModelMixin,
+                          mixins.DestroyModelMixin,
+                          viewsets.GenericViewSet):
+    serializer_class = ShoppingCartSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        return ShoppingCart.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

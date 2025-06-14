@@ -1,6 +1,13 @@
 from rest_framework import serializers
 
-from .models import Ingredient, Tag, Recipe, RecipeIngredient, Favorite
+from .models import (
+    Ingredient,
+    Tag,
+    Recipe,
+    RecipeIngredient,
+    Favorite,
+    ShoppingCart
+)
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -125,3 +132,22 @@ class FavoriteSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         recipe = validated_data['recipe']
         return Favorite.objects.create(user=user, recipe=recipe)
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShoppingCart
+        fields = ('id', 'user', 'recipe')
+        read_only_fields = ('user',)
+
+    def validate(self, data):
+        user = self.context['request'].user
+        recipe = data['recipe']
+        if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError('Рецепт уже в корзине!')
+        return data
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        recipe = validated_data['recipe']
+        return ShoppingCart.objects.create(user=user, recipe=recipe)

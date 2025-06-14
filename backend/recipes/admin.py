@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Ingredient, Recipe, Tag, RecipeIngredient, Favorite
+from .models import ShoppingCart
 
 
 class IngredientAdmin(admin.ModelAdmin):
@@ -29,6 +30,12 @@ class FavoriteAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'recipe__name')
 
 
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = ('user', 'recipe')
+    search_fields = ('user__username', 'recipe__name')
+
+
+admin.site.register(ShoppingCart, ShoppingCartAdmin)
 admin.site.register(Favorite, FavoriteAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Tag, TagAdmin)
