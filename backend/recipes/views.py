@@ -2,6 +2,7 @@ from rest_framework import viewsets, filters, status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import mixins
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from django.http import HttpResponse
 
@@ -33,6 +34,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'author__username']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['tags', 'author']
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -102,7 +105,6 @@ class ShoppingCartViewSet(mixins.CreateModelMixin,
             return HttpResponse('Требуется авторизация', status=401)
 
         ingredients = {}
-        # Получаем все рецепты в корзине пользователя
         recipes = Recipe.objects.filter(in_shopping_carts__user=user)
         for recipe in recipes:
             for ri in recipe.recipeingredient_set.all():
@@ -112,7 +114,6 @@ class ShoppingCartViewSet(mixins.CreateModelMixin,
                 key = (name, unit)
                 ingredients[key] = ingredients.get(key, 0) + amount
 
-        # Формируем текст для файла
         lines = [
             f"{name} ({unit}) — {amount}"
             for (name, unit), amount in ingredients.items()
