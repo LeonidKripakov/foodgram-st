@@ -17,8 +17,8 @@ class CustomUserCreateSerializer(serializers.ModelSerializer):
         validators=[UniqueValidator(queryset=User.objects.all())],
         error_messages={
             'invalid': (
-                'Введите правильный username. '
-                'Разрешены буквы, цифры и символы @/./+/-/_'
+                'Введите корректный username: '
+                'буквы, цифры и символы @/./+/-/_'
             )
         }
     )
@@ -30,10 +30,7 @@ class CustomUserCreateSerializer(serializers.ModelSerializer):
         required=True,
         max_length=150
     )
-    password = serializers.CharField(
-        write_only=True,
-        required=True
-    )
+    password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
@@ -47,11 +44,13 @@ class CustomUserCreateSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        # Метод create_user автоматически хеширует пароль
         return User.objects.create_user(**validated_data)
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -59,6 +58,22 @@ class CustomUserSerializer(serializers.ModelSerializer):
             'email',
             'username',
             'first_name',
-            'last_name'
+            'last_name',
+            'is_subscribed',
+            'avatar'
         )
         read_only_fields = fields
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        from .models import Subscription
+        return Subscription.objects.\
+            filter(user=request.user, author=obj).exists()
+
+    def get_avatar(self, obj):
+        avatar = getattr(getattr(obj, 'profile', None), 'avatar', None)
+        if not avatar:
+            return None
+        return self.context['request'].build_absolute_uri(avatar.url)
