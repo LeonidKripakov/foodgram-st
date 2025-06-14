@@ -2,6 +2,8 @@ from rest_framework import viewsets, filters, status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import mixins
+from rest_framework.decorators import action
+from django.http import HttpResponse
 
 from .models import Ingredient, Tag, Recipe, Favorite, ShoppingCart
 from .serializers import (
@@ -92,3 +94,31 @@ class ShoppingCartViewSet(mixins.CreateModelMixin,
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def download(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return HttpResponse('Требуется авторизация', status=401)
+
+        ingredients = {}
+        # Получаем все рецепты в корзине пользователя
+        recipes = Recipe.objects.filter(in_shopping_carts__user=user)
+        for recipe in recipes:
+            for ri in recipe.recipeingredient_set.all():
+                name = ri.ingredient.name
+                unit = ri.ingredient.measurement_unit
+                amount = ri.amount
+                key = (name, unit)
+                ingredients[key] = ingredients.get(key, 0) + amount
+
+        # Формируем текст для файла
+        lines = [
+            f"{name} ({unit}) — {amount}"
+            for (name, unit), amount in ingredients.items()
+        ]
+        content = '\n'.join(lines)
+        response = HttpResponse(content, content_type='text/plain')
+        response['Content-Disposition'] = 'attachment;' \
+            ' filename="shopping_list.txt"'
+        return response
