@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from .models import Ingredient, Tag, Recipe, RecipeIngredient
-from .fields import Base64ImageField
+from .models import Ingredient, Tag, Recipe, RecipeIngredient, Favorite
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -19,7 +18,9 @@ class TagSerializer(serializers.ModelSerializer):
 class RecipeIngredientReadSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
-    measurement_unit = serializers.ReadOnlyField(source='ingredient.measurement_unit')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit'
+    )
 
     class Meta:
         model = RecipeIngredient
@@ -48,7 +49,7 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
         source='ingredient',
-        write_only=True  # КРИТИЧНОЕ ИЗМЕНЕНИЕ
+        write_only=True
     )
 
     class Meta:
@@ -62,7 +63,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all(),
         many=True
     )
-    image = Base64ImageField(required=False)
 
     class Meta:
         model = Recipe
@@ -106,3 +106,22 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 )
         instance.save()
         return instance
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Favorite
+        fields = ('id', 'user', 'recipe')
+        read_only_fields = ('user',)
+
+    def validate(self, data):
+        user = self.context['request'].user
+        recipe = data['recipe']
+        if Favorite.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError('Рецепт уже в избранном!')
+        return data
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        recipe = validated_data['recipe']
+        return Favorite.objects.create(user=user, recipe=recipe)
