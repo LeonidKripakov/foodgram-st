@@ -1,32 +1,65 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
 
 from .models import Ingredient, Tag, Recipe
 from .serializers import (
-    IngredientSerializer, TagSerializer, RecipeSerializer
+    IngredientSerializer,
+    TagSerializer,
+    RecipeReadSerializer,
+    RecipeWriteSerializer,
 )
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet для просмотра ингредиентов.
-    """
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['^name']  # Поиск по началу имени, регистронезависимо
+    search_fields = ['^name']
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet для просмотра тегов.
-    """
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet для CRUD рецептов.
-    """
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name', 'author__username']
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return RecipeReadSerializer
+        return RecipeWriteSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        read_serializer = RecipeReadSerializer(
+            serializer.instance, context={'request': request}
+        )
+        headers = self.get_success_headers(read_serializer.data)
+        return Response(
+            read_serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        read_serializer = RecipeReadSerializer(
+            serializer.instance, context={'request': request}
+        )
+        return Response(read_serializer.data)
