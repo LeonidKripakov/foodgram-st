@@ -1,5 +1,6 @@
 from rest_framework import viewsets, filters, status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import mixins
 from django_filters.rest_framework import DjangoFilterBackend
@@ -73,6 +74,46 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer.instance, context={'request': request}
         )
         return Response(read_serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def favorite(self, request, pk=None):
+        recipe = self.get_object()
+        if Favorite.objects.filter(user=request.user, recipe=recipe).exists():
+            return Response({'errors': 'Рецепт уже в избранном!'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        Favorite.objects.create(user=request.user, recipe=recipe)
+        serializer = FavoriteSerializer(recipe, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @favorite.mapping.delete
+    def delete_favorite(self, request, pk=None):
+        recipe = self.get_object()
+        obj = Favorite.objects.filter(user=request.user, recipe=recipe)
+        if obj.exists():
+            obj.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'errors': 'Рецепт не в избранном!'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def shopping_cart(self, request, pk=None):
+        recipe = self.get_object()
+        if ShoppingCart.objects.filter(user=request.user, recipe=recipe).exists():
+            return Response({'errors': 'Рецепт уже в корзине!'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        ShoppingCart.objects.create(user=request.user, recipe=recipe)
+        serializer = ShoppingCartSerializer(recipe, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @shopping_cart.mapping.delete
+    def delete_shopping_cart(self, request, pk=None):
+        recipe = self.get_object()
+        obj = ShoppingCart.objects.filter(user=request.user, recipe=recipe)
+        if obj.exists():
+            obj.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'errors': 'Рецепт не в корзине!'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class FavoriteViewSet(mixins.CreateModelMixin,
