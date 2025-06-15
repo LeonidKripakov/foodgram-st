@@ -41,7 +41,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = {'name': ['istartswith']}
     filterset_class = IngredientFilter
-    
+
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
@@ -53,7 +53,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = RecipeFilter
-    filterset_fields = ['tags', 'author']
+    filterset_fields = ['author']
     search_fields = ['name', 'author__username']
     pagination_class = LimitOffsetPagination
 
@@ -81,18 +81,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        inst = self.get_object()
-        ser = self.get_serializer(
-            inst, data=request.data, partial=partial
-        )
-        ser.is_valid(raise_exception=True)
-        self.perform_update(ser)
-        out = RecipeReadSerializer(
-            ser.instance,
-            context={'request': request}
-        )
-        return Response(out.data)
+            partial = kwargs.pop('partial', False)
+            recipe = self.get_object()
+            if recipe.author != request.user:
+                return Response(status=status.HTTP_403_FORBIDDEN)
+            serializer = self.get_serializer(
+                recipe, data=request.data, partial=partial
+            )
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            read = RecipeReadSerializer(
+                serializer.instance, context={'request': request}
+            )
+            return Response(read.data)
+
+    def destroy(self, request, *args, **kwargs):
+        recipe = self.get_object()
+        if recipe.author != request.user:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'],
             permission_classes=[IsAuthenticated])
