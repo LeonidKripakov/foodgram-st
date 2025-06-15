@@ -9,7 +9,8 @@ from .models import Subscription, Profile
 from .pagination import CustomLimitOffsetPagination
 from .serializers import (
     CustomUserCreateSerializer,
-    CustomUserSerializer
+    CustomUserSerializer,
+    SubscriptionSerializer
 )
 
 User = get_user_model()
@@ -46,28 +47,50 @@ class UserViewSet(viewsets.ModelViewSet):
         url_path='subscribe'
     )
     def subscribe(self, request, pk=None):
+        """
+        POST /api/users/{id}/subscribe/ — подписаться на автора
+        Возвращает SubscriptionSerializer(author) с полями:
+        id, username, first_name, last_name, email, is_subscribed,
+        avatar, recipes_count, recipes
+        """
+        user = request.user
         author = self.get_object()
-        if author == request.user:
+        if author == user:
             return Response(
                 {'errors': 'Нельзя подписаться на себя!'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        if Subscription.objects.\
-           filter(user=request.user, author=author).exists():
+        if Subscription.objects.filter(user=user, author=author).exists():
             return Response(
                 {'errors': 'Уже подписаны!'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        Subscription.objects.create(
-            user=request.user, author=author
-        )
-        serializer = self.get_serializer(
-            author, context={'request': request}
+        Subscription.objects.create(user=user, author=author)
+        serializer = SubscriptionSerializer(
+            author,
+            context={'request': request}
         )
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED
         )
+
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[IsAuthenticated],
+        url_path='subscriptions'
+    )
+    def subscriptions(self, request):
+        authors_ids = Subscription.objects.filter(
+            user=request.user
+        ).values_list('author', flat=True)
+        qs = User.objects.filter(id__in=authors_ids)
+        page = self.paginate_queryset(qs)
+        serializer = SubscriptionSerializer(
+            page, many=True, context={'request': request}
+        )
+        return self.get_paginated_response(serializer.data)
 
     @subscribe.mapping.delete
     def unsubscribe(self, request, pk=None):
@@ -81,23 +104,6 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         qs.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @action(
-        detail=False,
-        methods=['get'],
-        permission_classes=[IsAuthenticated],
-        url_path='subscriptions'
-    )
-    def subscriptions(self, request):
-        authors_ids = Subscription.objects.\
-            filter(user=request.user).\
-            values_list('author', flat=True)
-        qs = User.objects.filter(id__in=authors_ids)
-        page = self.paginate_queryset(qs)
-        serializer = self.get_serializer(
-            page, many=True, context={'request': request}
-        )
-        return self.get_paginated_response(serializer.data)
 
     @action(
         detail=True,

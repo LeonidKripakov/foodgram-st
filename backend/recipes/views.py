@@ -11,7 +11,7 @@ from rest_framework.permissions import (
 
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-
+from rest_framework import serializers
 from .filters import RecipeFilter
 from .models import Ingredient, Tag, Recipe, Favorite, ShoppingCart
 from .serializers import (
@@ -221,3 +221,15 @@ class ShoppingCartViewSet(mixins.CreateModelMixin,
             'attachment; filename="shopping_list.txt"'
         )
         return response
+
+
+class RecipeSimpleSerializer(serializers.ModelSerializer):
+    """
+    Мини-сериализатор рецепта для включения в подписки:
+    возвращает только id, name, image, cooking_time
+    """
+    image = serializers.ImageField(read_only=True)
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')

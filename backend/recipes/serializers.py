@@ -11,6 +11,15 @@ from .models import (
 from users.serializers import CustomUserSerializer
 
 
+class RecipeSimpleSerializer(serializers.ModelSerializer):
+
+    image = serializers.ImageField(read_only=True)
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
 class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
