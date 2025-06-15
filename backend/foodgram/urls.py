@@ -17,12 +17,9 @@ router.register(r'recipes', RecipeViewSet, basename='recipe')
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Djoser: регистрация, токен и JWT
     path('api/auth/', include('djoser.urls')),
     path('api/auth/', include('djoser.urls.authtoken')),
     path('api/auth/', include('djoser.urls.jwt')),
-
-    # Все ViewSet'ы через роутер
     path('api/', include(router.urls)),
 ]
 
