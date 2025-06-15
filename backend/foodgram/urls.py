@@ -1,23 +1,23 @@
 from django.contrib import admin
-from django.urls import include, path
-from rest_framework.routers import DefaultRouter
-from users.views import UserViewSet
-from recipes.views import (
-    IngredientViewSet,
-    RecipeViewSet,
-    TagViewSet
-)
-
-router = DefaultRouter()
-router.register(r'users', UserViewSet, basename='user')
-router.register(r'ingredients', IngredientViewSet,
-                basename='ingredient')
-router.register(r'tags', TagViewSet, basename='tag')
-router.register(r'recipes', RecipeViewSet, basename='recipe')
-
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/', include('djoser.urls.authtoken')),
     path('api/', include('recipes.urls')),
-    path('api/', include('users.urls')),
+    path('api/auth/', include('djoser.urls')),
+    path('api/auth/', include('djoser.urls.authtoken')),
+    path('api/auth/', include('djoser.urls.jwt')),
 ]
+
+if settings.DEBUG:
+    # Раздаём медиа
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT
+    )
+    # И раздаём статику (для админки и прочих)
+    urlpatterns += static(
+        settings.STATIC_URL,
+        document_root=settings.STATIC_ROOT
+    )

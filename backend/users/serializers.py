@@ -77,7 +77,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(CustomUserSerializer):
-    from recipes.serializers import RecipeSimpleSerializer
+
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
