@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from recipes import urls as recipes_urls
 from users.views import UserViewSet
 from recipes.views import (
     IngredientViewSet,
