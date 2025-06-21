@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from .models import Subscription
+
+from recipes.serializers import RecipeSimpleSerializer
 
 User = get_user_model()
 
@@ -9,13 +10,17 @@ User = get_user_model()
 class CustomUserCreateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ]
     )
     username = serializers.RegexField(
         regex=r'^[\w.@+-]+\Z',
         max_length=150,
         required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())],
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
         error_messages={
             'invalid': (
                 'Введите корректный username: '
@@ -63,9 +68,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
-        return Subscription.objects.filter(
-            user=request.user, author=obj
-        ).exists()
+        return request.user.subscriptions.filter(author=obj).exists()
 
     def get_avatar(self, obj):
         request = self.context.get('request')
@@ -77,7 +80,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(CustomUserSerializer):
-
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
@@ -87,12 +89,11 @@ class SubscriptionSerializer(CustomUserSerializer):
         )
 
     def get_recipes(self, author):
-        from recipes.serializers import RecipeSimpleSerializer
         request = self.context.get('request')
         limit = request.query_params.get('recipes_limit')
         qs = author.recipes.all()
         if limit and limit.isdigit():
-            qs = qs[: int(limit)]
+            qs = qs[:int(limit)]
         return RecipeSimpleSerializer(
             qs, many=True, context=self.context
         ).data
