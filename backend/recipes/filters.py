@@ -12,15 +12,11 @@ class RecipeFilter(django_filters.FilterSet):
     is_in_shopping_cart = django_filters.BooleanFilter(
         method='filter_in_shopping_cart'
     )
-    tags = django_filters.AllValuesMultipleFilter(
-        field_name='tags__slug'
-    )
 
     class Meta:
         model = Recipe
         fields = [
             'author',
-            'tags',
             'is_favorited',
             'is_in_shopping_cart',
         ]
