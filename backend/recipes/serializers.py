@@ -11,7 +11,9 @@ from .models import (
     AMOUNT_MIN,
     AMOUNT_MAX,
 )
-from users.serializers import CustomUserSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class RecipeSimpleSerializer(serializers.ModelSerializer):
@@ -42,7 +44,10 @@ class RecipeIngredientReadSerializer(serializers.ModelSerializer):
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
-    author = CustomUserSerializer(read_only=True)
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
     ingredients = RecipeIngredientReadSerializer(
         source='recipeingredient_set',
         many=True,
