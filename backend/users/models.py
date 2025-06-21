@@ -3,19 +3,25 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+
 User = settings.AUTH_USER_MODEL
 
 
 class Subscription(models.Model):
-
     user = models.ForeignKey(
-        User, related_name='subscriptions', on_delete=models.CASCADE)
-
+        User,
+        related_name='subscriptions',
+        on_delete=models.CASCADE
+    )
     author = models.ForeignKey(
-        User, related_name='subscribers', on_delete=models.CASCADE)
+        User,
+        related_name='subscribers',
+        on_delete=models.CASCADE
+    )
 
     class Meta:
         unique_together = ('user', 'author')
+        ordering = ['user', 'author']
 
 
 class Profile(models.Model):
@@ -29,6 +35,9 @@ class Profile(models.Model):
         null=True,
         blank=True
     )
+
+    class Meta:
+        ordering = ['user']
 
     def __str__(self):
         return f"{self.user.username} Profile"
